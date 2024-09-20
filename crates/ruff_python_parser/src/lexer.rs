@@ -606,6 +606,47 @@ impl<'src> Lexer<'src> {
 
     /// Lex an identifier. Also used for keywords and string/bytes literals with a prefix.
     fn lex_identifier(&mut self, first: char) -> TokenKind {
+        static KEYWORDS: phf::Map<&'static str, TokenKind> = phf::phf_map! {
+            "False" => TokenKind::False,
+            "None" => TokenKind::None,
+            "True" => TokenKind::True,
+            "and" => TokenKind::And,
+            "as" => TokenKind::As,
+            "assert" => TokenKind::Assert,
+            "async" => TokenKind::Async,
+            "await" => TokenKind::Await,
+            "break" => TokenKind::Break,
+            "case" => TokenKind::Case,
+            "class" => TokenKind::Class,
+            "continue" => TokenKind::Continue,
+            "def" => TokenKind::Def,
+            "del" => TokenKind::Del,
+            "elif" => TokenKind::Elif,
+            "else" => TokenKind::Else,
+            "except" => TokenKind::Except,
+            "finally" => TokenKind::Finally,
+            "for" => TokenKind::For,
+            "from" => TokenKind::From,
+            "global" => TokenKind::Global,
+            "if" => TokenKind::If,
+            "import" => TokenKind::Import,
+            "in" => TokenKind::In,
+            "is" => TokenKind::Is,
+            "lambda" => TokenKind::Lambda,
+            "match" => TokenKind::Match,
+            "nonlocal" => TokenKind::Nonlocal,
+            "not" => TokenKind::Not,
+            "or" => TokenKind::Or,
+            "pass" => TokenKind::Pass,
+            "raise" => TokenKind::Raise,
+            "return" => TokenKind::Return,
+            "try" => TokenKind::Try,
+            "type" => TokenKind::Type,
+            "while" => TokenKind::While,
+            "with" => TokenKind::With,
+            "yield" => TokenKind::Yield,
+        };
+
         // Detect potential string like rb'' b'' f'' u'' r''
         let quote = match (first, self.cursor.first()) {
             (_, quote @ ('\'' | '"')) => self.try_single_char_prefix(first).then(|| {
@@ -648,50 +689,10 @@ impl<'src> Lexer<'src> {
             return TokenKind::Name;
         }
 
-        match text {
-            "False" => TokenKind::False,
-            "None" => TokenKind::None,
-            "True" => TokenKind::True,
-            "and" => TokenKind::And,
-            "as" => TokenKind::As,
-            "assert" => TokenKind::Assert,
-            "async" => TokenKind::Async,
-            "await" => TokenKind::Await,
-            "break" => TokenKind::Break,
-            "case" => TokenKind::Case,
-            "class" => TokenKind::Class,
-            "continue" => TokenKind::Continue,
-            "def" => TokenKind::Def,
-            "del" => TokenKind::Del,
-            "elif" => TokenKind::Elif,
-            "else" => TokenKind::Else,
-            "except" => TokenKind::Except,
-            "finally" => TokenKind::Finally,
-            "for" => TokenKind::For,
-            "from" => TokenKind::From,
-            "global" => TokenKind::Global,
-            "if" => TokenKind::If,
-            "import" => TokenKind::Import,
-            "in" => TokenKind::In,
-            "is" => TokenKind::Is,
-            "lambda" => TokenKind::Lambda,
-            "match" => TokenKind::Match,
-            "nonlocal" => TokenKind::Nonlocal,
-            "not" => TokenKind::Not,
-            "or" => TokenKind::Or,
-            "pass" => TokenKind::Pass,
-            "raise" => TokenKind::Raise,
-            "return" => TokenKind::Return,
-            "try" => TokenKind::Try,
-            "type" => TokenKind::Type,
-            "while" => TokenKind::While,
-            "with" => TokenKind::With,
-            "yield" => TokenKind::Yield,
-            _ => {
-                self.current_value = TokenValue::Name(Name::new(text));
-                TokenKind::Name
-            }
-        }
+        KEYWORDS.get(text).copied().unwrap_or_else(|| {
+            self.current_value = TokenValue::Name(Name::new(text));
+            TokenKind::Name
+        })
     }
 
     /// Try lexing the single character string prefix, updating the token flags accordingly.
